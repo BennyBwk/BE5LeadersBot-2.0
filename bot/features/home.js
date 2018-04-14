@@ -204,6 +204,51 @@ simpleRouter.on('select_service_markup', (ctx) => {
   };
 });
 
+let select_attendee_markup = Extra
+.HTML()
+.markup((m) => m.inlineKeyboard([
+
+    Weeks.findOne({}, {}, { sort: {_id:-1} }, function(err, doc) {
+        var stream = Attendance.find({}).stream();
+        stream.on('data', function (doc) {
+          if (doc.week == currentweek){
+              m.callbackButton('' + doc.name, 'select_attendee_markup:' + doc.name),
+            }
+        }).on('error', function (err) {
+            if (err) throw error;
+            ctx.telegram.sendMessage(ctx.message.from.id, "Oops! We are sorry that an error has occured but we are already looking into it. Please try again later.")
+        }).on('close', function () {
+
+        });
+      });
+
+], {columns: 1}));
+
+simpleRouter.on('select_attendee_markup', (ctx) => {
+  switch(ctx.state.value){
+
+    Weeks.findOne({}, {}, { sort: {_id:-1} }, function(err, doc) {
+        var stream = Attendance.find({}).stream();
+        stream.on('data', function (doc) {
+          if (doc.week == currentweek){
+            case '' + doc.name :
+              ctx.session.selected_name = doc.name
+              ctx.telegram.sendMessage(ctx.message.from.id, "" + ctx.session.selected_name)
+            break;
+            }
+        }).on('error', function (err) {
+            if (err) throw error;
+            ctx.telegram.sendMessage(ctx.message.from.id, "Oops! We are sorry that an error has occured but we are already looking into it. Please try again later.")
+        }).on('close', function () {
+
+        });
+      });
+
+
+    default:
+  };
+});
+
 simpleRouter.on('choose_a_week_menu', (ctx) => {
     switch(ctx.state.value){
     default:
@@ -266,8 +311,7 @@ simpleRouter.on('attendance_menu', (ctx) => {
       ctx.editMessageText("Update for which service?", select_service_markup);
       break;
     case "remove_attendance":
-      //To Be Completed
-      ctx.replyWithHTML("This feature is still under construction. Please try again later.");
+      ctx.editMessageText("Who would you like to remove in this week's attendance?", select_attendee_markup);
       break;
     case "past_attendance":
       homeHelper.pastAttendance(ctx);
